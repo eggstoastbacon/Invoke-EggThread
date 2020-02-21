@@ -1,6 +1,9 @@
 BENCHMARK: https://github.com/eggstoastbacon/Invoke-EggThread/wiki/Benchmark:-EggThread-vs.-EggJob-vs.-Parallel
 
-# Invoke-EggThread
+https://www.powershellgallery.com/packages/Invoke-EggThread
+
+Install-Module Invoke-EggThread
+
 Based on PSThreadJobs,  Launches the specified amounts of jobs, divides tasks evenly between them and runs them concurrently, in threads.
 
 .SYNOPSIS
