@@ -2,132 +2,170 @@ Function Invoke-EggThread {
   <#
 .SYNOPSIS
   Launches the specified amounts of jobs, divides tasks evenly between them and runs them concurrently, in threads.
- 
+  
 .DESCRIPTION
   Specify the amount of jobs, a variable or command to gather records and a scriptblock to run.
   Additional features include error log path, and reordering of records.
-  If your scriptblock will output a file append $x to the file name. Optional Throttling of threads per job
- 
+  If your scriptblock will output a file append $x to the file name. Optional Throttling of threads per job.
+  Output is stored in the variable $global:myJobData
+  Example: $global:myJobData | export-csv c:\temp\myData.csv, or $global:myJobData | outfile-csv c:\temp\myData.txt
+  
 .PARAMETER jobs
   Mandatory. Specify the amount of jobs that will be started. The $x variable refers to the job number while running.
- 
+  
 .PARAMETER int_records
   Mandatory. Provide an array of records, such as $items, or $items[0..2500]
- 
+  
 .PARAMETER exp_records
   Optional. Provide an expression that results in an array of records. Use this instead on Int_Records.
- 
+  
 .PARAMETER scriptBlock
   Mandatory. Provide a scriptblock to run against the provided array. Scriptblocks are closed in single quotes or parenthesis.
   Use $myJobVar as the reference.
- 
+  
   Ex: $myScriptBlock = {$math = $myjobvar + 6 | out-file c:\temp\math.txt -append}
- 
+  
 .PARAMETER errorLog
   Optional. Provide an error logging path such as "c:\temp"
- 
+  
 .PARAMETER combinePath
   Required for Combine.
   Together with CombineSrcName, this will combine all output files into one file.
   ex: "c:\temp"
   Specify the path of your output, this must be referenced in your scriptblock as your output destination.
- 
+  
 .PARAMETER combineSrcName
   Required for Combine, you must tell the script what your unique output file name is, ex: "exportdata".
   This must be the part of the file name you are using to to output in your scriptblock. Function Invoke-EggJob {
   <#
 .SYNOPSIS
   Launches the specified amounts of jobs, divides tasks evenly between them and runs them concurrently.
- 
+  
 .DESCRIPTION
   Specify the amount of jobs, a variable or command to gather records and a scriptblock to run.
   Additional features include error log path, and reordering of records.
   If your scriptblock will output a file append $x to the file name.
- 
+  
 .PARAMETER jobs
   Mandatory. Specify the amount of jobs that will be started. The $x variable refers to the job number while running.
- 
+  
 .PARAMETER int_records
   Mandatory. Provide an array of records, such as $items, or $items[0..2500]
- 
+  
 .PARAMETER exp_records
   Optional. Provide an expression that results in an array of records. Use this instead on Int_Records.
- 
+  
 .PARAMETER scriptBlock
   Mandatory. Provide a scriptblock to run against the provided array. Scriptblocks are closed in single quotes or parenthesis.
   Use $myJobVar as the reference.
- 
+  
   Ex: $myScriptBlock = {$math = $myjobvar + 6 | out-file c:\temp\math.txt -append}
- 
+  
 .PARAMETER errorLog
   Optional. Provide an error logging path such as "c:\windows\temp"
- 
+  
 .PARAMETER combinePath
   Required for Combine.
   Together with CombineSrcName, this will combine all output files into one file.
   ex: "c:\temp"
   Specify the path of your output, this must be referenced in your scriptblock as your output destination.
- 
+  
 .PARAMETER combineSrcName
   Required for Combine, you must tell the script what your unique output file name is, ex: "exportdata".
   This must be the part of the file name you are using to to output in your scriptblock.
   ex: out-file c:\temp\exportdata_$x
- 
+  
 .PARAMETER combineDestName
   Optional. Set the name of the combined file, default is "combined"
-
+ 
 .PARAMETER Throttle
   Optional. Throttle the amount of threads, default value is: 32
- 
+  
 .PARAMETER skipNth
   Optional. Divides files among jobs by assigning array objects to jobs in a sequential order.
   divides job records by skipping instead of assigning in order (can speed up some jobs) _
- 
+  
   Example: If you choose -jobs 4 and -skipnth 4
- 
+  
   job1 assigned records 0,3,7,11,15
- 
+  
   job2 assigned records 1,4,8,12,16
- 
+  
   job3 assigned records 2,5,9,13,17
- 
+  
   job4 assigned records 3,6,10,14,18
- 
+
+   .PARAMETER importFunctions
+  Parameter code by: u/PowerShellMichael
+  Import one or more declared functions into your scriptblock, will be added to your scriptblock just before the job runs.
+  Example:
+
+  Function Demo-Function(){
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory)]
+        [String]
+        $ParameterName
+    )
+    Write-Output $ParameterName
+}
+
+Function Demo2-Function(){
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory)]
+        [String]
+        $ParameterName
+    )
+    Write-Output $ParameterName
+}
+
+$scriptblock = {
+    
+    $random = get-random
+    $toast = "toast"
+    
+   Demo-Function -ParameterName Demo
+   Demo2-Function -ParameterName Demo2
+}
+
+Invoke-EggThread -jobs 4 -throttle 4 -int_records $items -importFunctions 'Demo-Function','Demo2-Function' -scriptBlock $scriptblock
+  
 .INPUTS
   Parameters above
- 
+  
 .OUTPUTS
-  Records or items processed in parallel with a scriptblock you provide.
- 
+  Records or items processed in parallel with a scriptblock you provide. Output is stored in the variable $global:myJobData
+  
 .NOTES
-  Version: 1.0.0
+  Version: 1.2.0
   Author: Eggs Toast Bacon
   Creation Date: 02/19/2020
-  Purpose/Change: Initial function development.
- 
+  Purpose/Change: importFunction Param Fixed.
+  
 .EXAMPLE
-   
+    
   Ex A:
   $items = (1..2500)
- 
+  
   $myScriptBlock = {$math = $myjobvar + 6 | out-file c:\temp\math_$x.txt -append}
- 
+  
   Invoke-EggThread -jobs 8 -int_records $items -scriptBlock $myscriptblock -errorlog C:\windows\temp
- 
+  
   Result is the number of items is divided by the number of jobs specified and each job is assigned an even workload.
   8 jobs run concurrently in parallel until their assigned workload is complete.
   Each $item in $items is added by 6 and the result output is appended to c:\temp\math_[job#].txt
- 
+  
   #############
- 
+  
   Ex B:
-   
+    
   $items = (1..2500)
- 
+  
   $myScriptBlock = {$math = $myjobvar + 6 | out-file c:\temp\mydata_$x.txt -append}
- 
+  
   Invoke-EggThread -jobs 8 -int_records $items -scriptBlock $myscriptblock -errorLog "C:\temp" -combinePath "c:\temp" -combineSrcName "mydata" -combineDestName "combo"
- 
+  
   Result is the number of items is divided by the number of jobs specified and each job is assigned an even workload.
   8 jobs run concurrently in parallel until their assigned workload is complete.
   Each $item in $items is added by 6 and the result output is appended to c:\temp\math_[job#].txt
@@ -142,15 +180,18 @@ Function Invoke-EggThread {
       [Parameter(Mandatory = $false, Position = 2)]$ext_records,
       [Parameter(Mandatory = $true, Position = 3)]$scriptBlock,
       [Parameter(Mandatory = $false, Position = 4)]$skipNth,
-      [Parameter(Mandatory = $false, Position = 5)]$errorLog,
-      [Parameter(Mandatory = $false, Position = 6)]$combinePath,
-      [Parameter(Mandatory = $false, Position = 7)]$combineSrcName,
-      [Parameter(Mandatory = $false, Position = 8)]$combineDestName = "combined"    
+       [Parameter(Mandatory = $false, Position = 5)]$importFunctions,
+      [Parameter(Mandatory = $false, Position = 6)]$errorLog,
+      [Parameter(Mandatory = $false, Position = 7)]$combinePath,
+      [Parameter(Mandatory = $false, Position = 8)]$combineSrcName,
+      [Parameter(Mandatory = $false, Position = 9)]$combineDestName = "combined",
+      [Parameter(Mandatory = $false, Position = 10)][int]$throttle = 32  
   )
     
   #Starts the timer of this function.
   $jobTimer = [system.diagnostics.stopwatch]::StartNew()
-
+  $FunctionsToInclude = 'Import-function'
+  $Functions = (Get-Item "Function:*").Where{$_.Name -in $importFunctions } | ForEach-Object { [String]"Function $($_.Name) { $($_.ScriptBlock) };" }
   #Function to monitor the status of the jobs.
   Function Get-JobState {
       $jobStatus = Get-Job | Select-Object State | ForEach ( { $_.State })
@@ -201,6 +242,8 @@ Function Invoke-EggThread {
   $items = Get-RoundedDown ($records.count / $y.count)
   if (($records.count / $y.count) -like "*.*") { $items = $items + 1 }
 
+  $scriptBlock = $functions + $scriptBlock
+
   #Make variable unique so that it doesn't interfere with variables that may be running in the scriptblock, don't use variables with "Egg" in it to be safe :).
   $itemsEgg = $items
   $scriptBlockEgg = $scriptBlock
@@ -214,9 +257,9 @@ Function Invoke-EggThread {
   
   #Create the jobs
   ForEach ($x in $y) {
-      Start-ThreadJob -Throttle 32 -Name ([string]$x + "_eggjob") -ScriptBlock  {
+      Start-ThreadJob -Throttle $throttle -Name ([string]$x + "_eggjob") -ScriptBlock  {
         
-          param ([string]$x, [int]$itemsEgg, $recordsEgg, $scriptBlockEgg, $cache_dirEgg, $errorLogEgg) 
+          param ([string]$x, [int]$itemsEgg, $recordsEgg, $scriptBlockEgg, $cache_dirEgg, $errorLogEgg,[int]$throttle) 
       
           #Actually assign the array to the jobs
           if ($x -eq 0) { $aEgg = 0 } else { $aEgg = (([int]$itemsEgg * $x) + 1) }               
@@ -236,7 +279,7 @@ Function Invoke-EggThread {
                   }
               }     
           }  
-      } -ArgumentList ($x, $itemsEgg, $recordsEgg, $scriptBlockEgg, $cache_dirEgg, $errorLogEgg)
+      } -ArgumentList ($x, $itemsEgg, $recordsEgg, $scriptBlockEgg, $cache_dirEgg, $errorLogEgg,[int]$throttle)
   }
 
   #Monitor the state of the jobs throughout the duration of the work.
@@ -246,7 +289,10 @@ Function Invoke-EggThread {
       Start-Sleep 1
       Get-JobState
   }
+
+  
   #Cleanup and stop the timer
+  $global:myJobData = get-job | Receive-Job 
   Remove-Job *  
 
   #Combined files if specified
