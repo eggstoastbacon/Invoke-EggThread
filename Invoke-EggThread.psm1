@@ -1,3 +1,4 @@
+
 Function Invoke-EggThread {
   <#
 .SYNOPSIS
@@ -100,36 +101,19 @@ Function Invoke-EggThread {
   Import one or more declared functions into your scriptblock, will be added to your scriptblock just before the job runs.
   Example:
 
-  Function Demo-Function(){
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory)]
-        [String]
-        $ParameterName
-    )
-    Write-Output $ParameterName
-}
+    function timeTwo {
+    param([int]$value)
+    [int]$value * 2
+    }
 
-Function Demo2-Function(){
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory)]
-        [String]
-        $ParameterName
-    )
-    Write-Output $ParameterName
-}
+    $items = (1..20)
+    $scriptblock = {   
+    $myjobvar = timeTwo -value $myjobvar
+    $myjobvar
+    }
 
-$scriptblock = {
-    
-    $random = get-random
-    $toast = "toast"
-    
-   Demo-Function -ParameterName Demo
-   Demo2-Function -ParameterName Demo2
-}
-
-Invoke-EggThread -jobs 4 -throttle 4 -int_records $items -importFunctions 'Demo-Function','Demo2-Function' -scriptBlock $scriptblock
+    invoke-eggthread -jobs 4 -scriptBlock $scriptblock -int_records $items -importFunctions timeTwo
+    $global:myJobData 
   
 .INPUTS
   Parameters above
@@ -138,9 +122,9 @@ Invoke-EggThread -jobs 4 -throttle 4 -int_records $items -importFunctions 'Demo-
   Records or items processed in parallel with a scriptblock you provide. Output is stored in the variable $global:myJobData
   
 .NOTES
-  Version: 1.2.0
+  Version: 1.2.5
   Author: Eggs Toast Bacon
-  Creation Date: 02/19/2020
+  Creation Date: 02/23/2020
   Purpose/Change: importFunction Param Fixed.
   
 .EXAMPLE
@@ -180,7 +164,7 @@ Invoke-EggThread -jobs 4 -throttle 4 -int_records $items -importFunctions 'Demo-
       [Parameter(Mandatory = $false, Position = 2)]$ext_records,
       [Parameter(Mandatory = $true, Position = 3)]$scriptBlock,
       [Parameter(Mandatory = $false, Position = 4)]$skipNth,
-       [Parameter(Mandatory = $false, Position = 5)]$importFunctions,
+      [Parameter(Mandatory = $false, Position = 5)]$importFunctions,
       [Parameter(Mandatory = $false, Position = 6)]$errorLog,
       [Parameter(Mandatory = $false, Position = 7)]$combinePath,
       [Parameter(Mandatory = $false, Position = 8)]$combineSrcName,
@@ -189,8 +173,8 @@ Invoke-EggThread -jobs 4 -throttle 4 -int_records $items -importFunctions 'Demo-
   )
     
   #Starts the timer of this function.
+  Clear-Variable global:myjobdata -ErrorAction SilentlyContinue
   $jobTimer = [system.diagnostics.stopwatch]::StartNew()
-  $FunctionsToInclude = 'Import-function'
   $Functions = (Get-Item "Function:*").Where{$_.Name -in $importFunctions } | ForEach-Object { [String]"Function $($_.Name) { $($_.ScriptBlock) };" }
   #Function to monitor the status of the jobs.
   Function Get-JobState {
@@ -242,7 +226,9 @@ Invoke-EggThread -jobs 4 -throttle 4 -int_records $items -importFunctions 'Demo-
   $items = Get-RoundedDown ($records.count / $y.count)
   if (($records.count / $y.count) -like "*.*") { $items = $items + 1 }
 
+   if($importFunctions){
   $scriptBlock = $functions + $scriptBlock
+  }
 
   #Make variable unique so that it doesn't interfere with variables that may be running in the scriptblock, don't use variables with "Egg" in it to be safe :).
   $itemsEgg = $items
@@ -292,6 +278,7 @@ Invoke-EggThread -jobs 4 -throttle 4 -int_records $items -importFunctions 'Demo-
 
   
   #Cleanup and stop the timer
+  start-sleep -Milliseconds 800
   $global:myJobData = get-job | Receive-Job 
   Remove-Job *  
 
@@ -333,3 +320,4 @@ Invoke-EggThread -jobs 4 -throttle 4 -int_records $items -importFunctions 'Demo-
   Write-Host ("All jobs are done. Time elapsed: " + $jobTimer.elapsed) -ForegroundColor Cyan
     
 }
+
