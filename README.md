@@ -5,7 +5,7 @@ https://www.powershellgallery.com/packages/Invoke-EggThread
 Install-Module Invoke-EggThread
 
  Function Invoke-EggThread {
-  <#
+ <#
 .SYNOPSIS
   Launches the specified amounts of jobs, divides tasks evenly between them and runs them concurrently, in threads.
   
