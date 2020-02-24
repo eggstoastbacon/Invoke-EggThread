@@ -100,10 +100,14 @@ Install-Module Invoke-EggThread
   job3 assigned records 2,5,9,13,17
   
   job4 assigned records 3,6,10,14,18
-   .PARAMETER importFunctions
+  
+  .PARAMETER importFunctions
+  
   Parameter code by: u/PowerShellMichael
+  
   Import one or more declared functions into your scriptblock, will be added to your scriptblock just before the job runs.
   Example:
+  
     function timeTwo {
     param([int]$value)
     [int]$value * 2
@@ -113,7 +117,9 @@ Install-Module Invoke-EggThread
     $myjobvar = timeTwo -value $myjobvar
     $myjobvar
     }
+    
     invoke-eggthread -jobs 4 -scriptBlock $scriptblock -int_records $items -importFunctions timeTwo
+    
     $global:myJobData 
   
 .INPUTS
