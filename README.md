@@ -4,7 +4,8 @@ https://www.powershellgallery.com/packages/Invoke-EggThread
 
 Install-Module Invoke-EggThread
 
- <#
+ Function Invoke-EggThread {
+  <#
 .SYNOPSIS
   Launches the specified amounts of jobs, divides tasks evenly between them and runs them concurrently, in threads.
   
@@ -99,42 +100,21 @@ Install-Module Invoke-EggThread
   job3 assigned records 2,5,9,13,17
   
   job4 assigned records 3,6,10,14,18
-
    .PARAMETER importFunctions
   Parameter code by: u/PowerShellMichael
   Import one or more declared functions into your scriptblock, will be added to your scriptblock just before the job runs.
   Example:
-
-  Function Demo-Function(){
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory)]
-        [String]
-        $ParameterName
-    )
-    Write-Output $ParameterName
-}
-
-Function Demo2-Function(){
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory)]
-        [String]
-        $ParameterName
-    )
-    Write-Output $ParameterName
-}
-
-$scriptblock = {
-    
-    $random = get-random
-    $toast = "toast"
-    
-   Demo-Function -ParameterName Demo
-   Demo2-Function -ParameterName Demo2
-}
-
-Invoke-EggThread -jobs 4 -throttle 4 -int_records $items -importFunctions 'Demo-Function','Demo2-Function' -scriptBlock $scriptblock
+    function timeTwo {
+    param([int]$value)
+    [int]$value * 2
+    }
+    $items = (1..20)
+    $scriptblock = {   
+    $myjobvar = timeTwo -value $myjobvar
+    $myjobvar
+    }
+    invoke-eggthread -jobs 4 -scriptBlock $scriptblock -int_records $items -importFunctions timeTwo
+    $global:myJobData 
   
 .INPUTS
   Parameters above
@@ -143,9 +123,9 @@ Invoke-EggThread -jobs 4 -throttle 4 -int_records $items -importFunctions 'Demo-
   Records or items processed in parallel with a scriptblock you provide. Output is stored in the variable $global:myJobData
   
 .NOTES
-  Version: 1.2.0
+  Version: 1.2.5
   Author: Eggs Toast Bacon
-  Creation Date: 02/19/2020
+  Creation Date: 02/23/2020
   Purpose/Change: importFunction Param Fixed.
   
 .EXAMPLE
